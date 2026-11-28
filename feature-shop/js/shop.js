@@ -92,6 +92,7 @@
     }
     function writeUrl() {
       const u = new URLSearchParams();
+      if (SAMPLE) u.set("sample", "1");
       if (S.q) u.set("q", S.q); if (S.cat !== "all") u.set("cat", S.cat); if (S.sort !== "featured") u.set("sort", S.sort);
       if (S.mats.size) u.set("mat", [...S.mats].join(",")); if (S.cols.size) u.set("col", [...S.cols].join(","));
       if (S.min) u.set("min", S.min); if (S.max) u.set("max", S.max); if (S.sale) u.set("sale", "1"); if (S.custom) u.set("custom", "1");
@@ -155,7 +156,7 @@
     function render() {
       grid.setAttribute("aria-busy", "false");
       const list = (products || []).filter((p) => matches(p)).slice().sort(sorters[S.sort] || sorters.featured);
-      $("#shopCount").textContent = products ? (LANG === "en" ? `${list.length} ${list.length === 1 ? "product" : "products"}` : `${list.length} products`) : "";
+      $("#shopCount").textContent = products ? `${list.length} ${list.length === 1 ? "product" : "products"}` : "";
       if (!products) { grid.innerHTML = skeletons(8); return; }
       if (!products.length) {
         grid.innerHTML = `<div class="pgrid__empty"><p class="pgrid__emoji" aria-hidden="true">🖨️</p><h3>${T("Shop jaldi khulegi!", "The shop opens soon!")}</h3><p>${T("Hum pehle designs print kar rahe hain. Tab tak apna idea bhejo.", "We're printing the first designs. Meanwhile, send us your own idea.")}</p><a href="pricing.html#quote" class="btn btn--accent">⚡ ${T("Custom print price", "Custom print price")}</a></div>`;
