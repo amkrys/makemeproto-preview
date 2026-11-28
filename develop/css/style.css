@@ -429,6 +429,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .quote__stats div { background: #1b1b1a; padding: 14px 16px; }
 .quote__stats dt { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: #8a857a; }
 .quote__stats dd { margin: 4px 0 0; font-size: 1rem; font-weight: 600; color: var(--paper); }
+.quote__eta { margin: -8px 0 18px; font-size: 1.3rem; color: #ffd27a; transform: rotate(-1.5deg); transform-origin: left; }
 .quote__fine { font-size: .8rem; color: #8a857a; margin: 16px 0 0; }
 .btn.is-disabled { opacity: .45; pointer-events: none; }
 
