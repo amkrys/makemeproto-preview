@@ -53,26 +53,36 @@
     return `<i class="cdot" style="--c:${esc(c.hex || "#8E8E8E")}" title="${esc(c.name)}"></i>`;
   }
   function card(p) {
-    const pct = off(p), cols = p.colours || [];
+    const pct = off(p), cols = p.colours || [], from = (p.options || []).some((o) => o.add > 0);
+    const meta = p.orders > 0 ? `🔥 ${p.orders} ${T("logon ne liya", p.orders === 1 ? "order" : "orders")}` : p.ships ? `🚚 ${esc(p.ships)}` : `🖨️ ${T("Fresh print", "Printed fresh")}`;
     return `<a class="pcard" href="${productUrl(p)}" data-id="${esc(p.id)}">
-      ${media(p, "pcard__media pmedia")}
-      <span class="pcard__badges">
-        ${p.featured ? `<span class="pbadge pbadge--star">★ ${T("Favourite", "Favourite")}</span>` : ""}
+      <span class="pcard__top">
+        ${media(p, "pcard__media pmedia")}
+        ${p.featured ? `<span class="pcard__sticker hand">${T("Sabka favourite ⭐", "Crowd favourite ⭐")}</span>` : ""}
         ${pct ? `<span class="pbadge pbadge--sale">−${pct}%</span>` : ""}
+        ${p.personalise ? `<span class="pcard__custom">✏️ ${T("naam likhwao", "add a name")}</span>` : ""}
       </span>
-      ${p.personalise ? `<span class="pbadge pbadge--custom" title="${esc(T("Naam ya text daal sakte ho", "Can be personalised"))}">✏️</span>` : ""}
       <span class="pcard__body">
-        <span class="pcard__cat mono">${icon(p.category)} ${esc(p.category)}</span>
+        <span class="pcard__cat mono">${esc(p.category)}</span>
         <span class="pcard__title">${esc(p.title)}</span>
         <span class="pcard__row">
-          <span class="pcard__price">${(p.options || []).some((o) => o.add > 0) ? `<small>${T("se", "from")}</small> ` : ""}${inr(p.price)}${p.was > p.price ? ` <s>${inr(p.was)}</s>` : ""}</span>
-          <span class="pcard__dots">${cols.slice(0, 4).map(dot).join("")}${cols.length > 4 ? `<b>+${cols.length - 4}</b>` : ""}</span>
+          <span class="pcard__price">${from ? `<small>${T("se shuru", "from")}</small>` : ""}${inr(p.price)}${p.was > p.price ? `<s>${inr(p.was)}</s>` : ""}</span>
+          <span class="pcard__dots">${cols.slice(0, 3).map(dot).join("")}${cols.length > 3 ? `<b>+${cols.length - 3}</b>` : ""}</span>
         </span>
-        ${p.orders > 0 ? `<span class="pcard__meta mono">🔥 ${p.orders} ${T("baar order hua", p.orders === 1 ? "order" : "orders")}</span>` : p.ships ? `<span class="pcard__meta mono">🚚 ${esc(p.ships)}</span>` : ""}
+        <span class="pcard__meta">${meta}</span>
       </span>
     </a>`;
   }
-  const skeletons = (n) => Array.from({ length: n }, () => `<span class="pcard pcard--skel" aria-hidden="true"><span class="pcard__media skel"></span><span class="pcard__body"><span class="skel skel--line" style="width:40%"></span><span class="skel skel--line"></span><span class="skel skel--line" style="width:55%"></span></span></span>`).join("");
+  // the last tile: for anything not in the shop
+  const customTile = () => `<a class="pcard pcard--custom" href="pricing.html#quote">
+      <span class="pcard__customin">
+        <span class="pcard__emoji" aria-hidden="true">💭</span>
+        <span class="pcard__title hand">${T("Jo chahiye woh nahi mila?", "Can't find what you need?")}</span>
+        <span class="pcard__ask">${T("Idea bhejo, hum design karke print kar denge.", "Send us your idea and we'll design and print it.")}</span>
+        <span class="btn btn--accent btn--sm">⚡ ${T("Custom price lo", "Get a custom price")}</span>
+      </span>
+    </a>`;
+  const skeletons = (n) => Array.from({ length: n }, () => `<span class="pcard pcard--skel" aria-hidden="true"><span class="pcard__top"><span class="pcard__media skel"></span></span><span class="pcard__body"><span class="skel skel--line" style="width:40%"></span><span class="skel skel--line"></span><span class="skel skel--line" style="width:55%"></span></span></span>`).join("");
 
   /* =========================================================
      Listing
@@ -125,7 +135,7 @@
       // categories that have products, in the app's order, then any others
       const used = [...new Set(all.map((p) => p.category))];
       const order = [...categories.filter((c) => used.includes(c)), ...used.filter((c) => !categories.includes(c))];
-      cats.innerHTML = [["all", `🛍️ ${T("Sab", "All")}`], ...order.map((c) => [c, `${icon(c)} ${esc(c)}`])]
+      cats.innerHTML = [["all", `🛍️ ${T("Sab kuch", "Everything")}`], ...order.map((c) => [c, `${icon(c)} ${esc(c)}`])]
         .map(([k, lbl]) => `<button type="button" class="mfilter__btn${S.cat === k ? " is-on" : ""}" data-cat="${esc(k)}" aria-pressed="${S.cat === k}">${lbl} <b>${k === "all" ? all.length : all.filter((p) => p.category === k).length}</b></button>`).join("");
       const mats = [...new Set(all.flatMap((p) => p.materials || []))];
       $("#fMaterial").hidden = !mats.length;
@@ -133,7 +143,8 @@
       const colours = new Map();
       all.forEach((p) => (p.colours || []).forEach((c) => { const k = colourKey(c); if (k && !colours.has(k)) colours.set(k, c); }));
       $("#fColour").hidden = !colours.size;
-      $("#fColour .sfilters__swatches").innerHTML = [...colours].map(([k, c]) => `<button type="button" class="sswatch${S.cols.has(k) ? " is-on" : ""}" data-col="${esc(k)}" aria-pressed="${S.cols.has(k)}" title="${esc(c.name)}"><i class="cdot" style="--c:${esc(c.hex || "#8E8E8E")}"></i><span>${esc(c.name)}</span></button>`).join("");
+      $("#fColour .sfilters__swatches").innerHTML = [...colours].map(([k, c]) => `<button type="button" class="sswatch${S.cols.has(k) ? " is-on" : ""}" data-col="${esc(k)}" aria-pressed="${S.cols.has(k)}" title="${esc(c.name)}"><i class="cdot" style="--c:${esc(c.hex || "#8E8E8E")}"></i><span class="sr-only">${esc(c.name)}</span></button>`).join("");
+      $("#fColourPicked").textContent = S.cols.size ? [...S.cols].map((k) => colours.get(k)?.name || k).join(", ") : T("Rang pe tap karo", "Tap a colour");
       $("#fPricePresets").innerHTML = PRESETS.map((x) => { const on = String(S.min) === String(x.min) && String(S.max) === String(x.max); return `<button type="button" class="schip${on ? " is-on" : ""}" data-preset="${x.k}" aria-pressed="${on}">${x.lbl()}</button>`; }).join("");
       $("#fMin").value = S.min; $("#fMax").value = S.max; $("#fSale").checked = S.sale; $("#fCustom").checked = S.custom;
       search.value = S.q; sort.value = S.sort;
@@ -156,13 +167,13 @@
     function render() {
       grid.setAttribute("aria-busy", "false");
       const list = (products || []).filter((p) => matches(p)).slice().sort(sorters[S.sort] || sorters.featured);
-      $("#shopCount").textContent = products ? `${list.length} ${list.length === 1 ? "product" : "products"}` : "";
+      $("#shopCount").innerHTML = products ? `<b>${list.length}</b> ${LANG === "en" ? (list.length === 1 ? "design" : "designs") : (list.length === 1 ? "design mila" : "designs mile")}` : "";
       if (!products) { grid.innerHTML = skeletons(8); return; }
       if (!products.length) {
         grid.innerHTML = `<div class="pgrid__empty"><p class="pgrid__emoji" aria-hidden="true">🖨️</p><h3>${T("Shop jaldi khulegi!", "The shop opens soon!")}</h3><p>${T("Hum pehle designs print kar rahe hain. Tab tak apna idea bhejo.", "We're printing the first designs. Meanwhile, send us your own idea.")}</p><a href="pricing.html#quote" class="btn btn--accent">⚡ ${T("Custom print price", "Custom print price")}</a></div>`;
         return;
       }
-      grid.innerHTML = list.length ? list.map(card).join("")
+      grid.innerHTML = list.length ? list.map(card).join("") + customTile()
         : `<div class="pgrid__empty"><p class="pgrid__emoji" aria-hidden="true">🔍</p><h3>${T("Kuch nahi mila", "Nothing matches")}</h3><p>${T("Filters kam karke dekho, ya humein bata do kya chahiye.", "Try fewer filters, or tell us what you're looking for.")}</p><button type="button" class="btn btn--ghost" data-clear>${T("Filters hatao", "Clear filters")}</button></div>`;
       $("[data-clear]", grid)?.addEventListener("click", clearAll);
       activeChips();
@@ -205,7 +216,7 @@
   function initProduct() {
     const box = $("#pdp"), params = new URLSearchParams(location.search), id = params.get("id") || "";
     $$('#navLinks a[href="shop.html"]').forEach((a) => a.setAttribute("aria-current", "page"));
-    let p = null, sel = {}, img = 0, shown = false;
+    let p = null, sel = {}, img = 0, shown = false, barIo = null;
 
     function choose() {
       sel = { option: (p.options || [])[0] || null, material: (p.materials || [])[0] || "", colour: (p.colours || [])[0] || null, qty: 1, text: "" };
@@ -241,7 +252,7 @@
           <div class="pdp__main">
             ${imgs.length ? `<img id="pdpImg" src="${esc(imgs[img] || imgs[0])}" alt="${esc(p.title)}">` : `<span class="pmedia pmedia--none pdp__none"><span class="pmedia__emoji" aria-hidden="true">${icon(p.category)}</span></span>`}
             ${imgs.length > 1 ? `<button type="button" class="pdp__nav pdp__nav--prev" data-step="-1" aria-label="${T("Pichli photo", "Previous photo")}">‹</button><button type="button" class="pdp__nav pdp__nav--next" data-step="1" aria-label="${T("Agli photo", "Next photo")}">›</button>` : ""}
-            <span class="pcard__badges">${p.featured ? `<span class="pbadge pbadge--star">★ Favourite</span>` : ""}${pct ? `<span class="pbadge pbadge--sale">−${pct}%</span>` : ""}</span>
+            ${p.featured ? `<span class="pcard__sticker pcard__sticker--big hand">${T("Sabka favourite ⭐", "Crowd favourite ⭐")}</span>` : ""}
           </div>
           ${imgs.length > 1 ? `<div class="pdp__thumbs" role="group" aria-label="${T("Photos", "Photos")}">${(p.thumbs || imgs).map((t, i) => `<button type="button" class="pdp__thumb${i === img ? " is-on" : ""}" data-img="${i}" aria-label="${T("Photo", "Photo")} ${i + 1}"><img src="${esc(t)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}
         </div>
@@ -249,17 +260,18 @@
         <div class="pdp__info">
           <p class="pcard__cat mono">${icon(p.category)} ${esc(p.category)}</p>
           <h1 class="pdp__title">${esc(p.title)}</h1>
-          <p class="pdp__price"><span id="pdpUnit">${inr(unit())}</span>${p.was > p.price ? ` <s>${inr(p.was + (sel.option ? sel.option.add || 0 : 0))}</s> <span class="pbadge pbadge--sale">−${pct}%</span>` : ""}</p>
-          <p class="pdp__facts mono">${[p.orders > 0 ? `🔥 ${p.orders} ${p.orders === 1 ? "order" : "orders"}` : "", p.ships ? `🚚 ${esc(p.ships)}` : "", `📍 ${T("Fresh print", "Printed fresh")}, <span data-city>${esc(CONFIG.city)}</span>`].filter(Boolean).join("<i>·</i>")}</p>
+          <p class="pdp__price"><span id="pdpUnit">${inr(unit())}</span>${p.was > p.price ? `<s>${inr(p.was + (sel.option ? sel.option.add || 0 : 0))}</s><span class="pbadge pbadge--sale">−${pct}%</span>` : ""}</p>
+          ${pct ? `<p class="pdp__deal hand">${T("Abhi sasta hai! 🎉", "On sale right now! 🎉")}</p>` : ""}
+          <ul class="pdp__facts">${[p.orders > 0 ? `<li>🔥 ${p.orders} ${T("logon ne liya", p.orders === 1 ? "order so far" : "orders so far")}</li>` : "", p.ships ? `<li>🚚 ${esc(p.ships)}</li>` : "", `<li>📍 ${T("Fresh print", "Printed fresh in")} ${esc(CONFIG.city)}</li>`].join("")}</ul>
 
           <form class="pdp__form" id="pdpForm" novalidate>
             <div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
-            ${(p.options || []).length ? `<div class="ogroup"><p class="ogroup__label">${T("Size / option", "Size / option")}</p><div class="ogroup__chips">${chips(p.options, sel.option, "opt")}</div></div>` : ""}
-            ${(p.materials || []).length > 1 ? `<div class="ogroup"><p class="ogroup__label">Material</p><div class="ogroup__chips">${chips(p.materials, sel.material, "mat")}</div></div>` : ""}
-            ${(p.colours || []).length ? `<div class="ogroup"><p class="ogroup__label">${T("Colour", "Colour")}: <b>${esc(sel.colour ? sel.colour.name : "")}</b></p><div class="ogroup__swatches">${p.colours.map((c, i) => `<button type="button" class="oswatch${sel.colour === c ? " is-on" : ""}" data-col="${i}" aria-pressed="${sel.colour === c}" title="${esc(c.name)}"><i class="cdot" style="--c:${esc(c.hex || "#8E8E8E")}"></i><span class="sr-only">${esc(c.name)}</span></button>`).join("")}</div></div>` : ""}
+            ${(p.options || []).length ? `<div class="ogroup"><p class="ogroup__label">${T("Size chuno", "Choose a size")}</p><div class="ogroup__chips">${chips(p.options, sel.option, "opt")}</div></div>` : ""}
+            ${(p.materials || []).length > 1 ? `<div class="ogroup"><p class="ogroup__label">${T("Material chuno", "Choose a material")}</p><div class="ogroup__chips">${chips(p.materials, sel.material, "mat")}</div></div>` : ""}
+            ${(p.colours || []).length ? `<div class="ogroup"><p class="ogroup__label">${T("Rang", "Colour")}: <b>${esc(sel.colour ? sel.colour.name : "")}</b></p><div class="ogroup__swatches">${p.colours.map((c, i) => `<button type="button" class="oswatch${sel.colour === c ? " is-on" : ""}" data-col="${i}" aria-pressed="${sel.colour === c}" title="${esc(c.name)}"><i class="cdot" style="--c:${esc(c.hex || "#8E8E8E")}"></i><span class="sr-only">${esc(c.name)}</span></button>`).join("")}</div></div>` : ""}
             ${p.personalise ? `<label class="field ogroup"><span>✏️ ${esc(p.personalise)}</span><input type="text" id="pdpText" maxlength="40" value="${esc(sel.text)}" placeholder="${T("Jaise: Aarav", "e.g. Aarav")}"></label>` : ""}
             <div class="ogroup ogroup--row">
-              <p class="ogroup__label">${T("Kitne chahiye", "Quantity")}</p>
+              <p class="ogroup__label">${T("Kitne chahiye?", "Quantity")}</p>
               <div class="qty"><button type="button" data-qty="-1" aria-label="${T("Kam", "Less")}">−</button><output id="pdpQty">${sel.qty}</output><button type="button" data-qty="1" aria-label="${T("Zyada", "More")}">+</button></div>
             </div>
             <div class="pdp__buy">
@@ -268,16 +280,22 @@
                 <label class="field"><span>WhatsApp</span><input type="tel" id="pdpPhone" autocomplete="tel" inputmode="tel" maxlength="16" placeholder="98765 43210" required></label>
               </div>
               <div class="pdp__total"><span class="mono">${T("Total", "Total")}</span><b id="pdpTotal">${inr(total())}</b></div>
+              <p class="pdp__nudge hand" aria-hidden="true">${T("Pehle baat, phir payment 🤝", "Chat first, pay later 🤝")}</p>
               <button type="submit" class="btn btn--accent btn--block pdp__order">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>
                 ${T("WhatsApp pe order karo", "Order on WhatsApp")}
               </button>
               <p class="pdp__hint" id="pdpHint" aria-live="polite"></p>
-              <p class="pdp__fine">${T("Abhi koi payment nahi. Hum WhatsApp pe price aur delivery confirm karenge, phir aap UPI se pay karna.", "No payment now. We confirm the price and delivery on WhatsApp, then you pay by UPI.")}</p>
+              <ul class="pdp__trust">
+                <li><b>💬</b>${T("Abhi koi payment nahi", "No payment now")}</li>
+                <li><b>🖨️</b>${T("Order pe fresh print", "Printed to order")}</li>
+                <li><b>📦</b>${T("Ghar tak delivery", "Delivered to you")}</li>
+              </ul>
             </div>
           </form>
 
           <div class="pdp__more">
+            <h2 class="pdp__h">${T("Is design ke baare mein", "About this design")}</h2>
             ${p.description ? `<div class="pdp__desc">${esc(p.description).replace(/\n/g, "<br>")}</div>` : ""}
             <dl class="pdp__specs">
               ${p.size ? `<div><dt class="mono">${T("Size", "Size")}</dt><dd>${esc(p.size)}</dd></div>` : ""}
@@ -291,6 +309,16 @@
             </div>
           </div>
         </div>`;
+      // phones: a bar with the total and the order button, while the real button is off screen
+      let bar = $("#pdpBar");
+      if (!bar) { bar = document.createElement("div"); bar.id = "pdpBar"; bar.className = "pdpbar"; document.body.appendChild(bar); }
+      bar.innerHTML = `<div class="pdpbar__price"><span class="mono">${T("Total", "Total")}</span><b id="pdpBarTotal">${inr(total())}</b></div><button type="button" class="btn btn--accent pdpbar__go">${T("Order karo", "Order now")} →</button>`;
+      $(".pdpbar__go", bar).addEventListener("click", () => { $("#pdpName").scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => $("#pdpName").focus({ preventScroll: true }), 400); });
+      if ("IntersectionObserver" in window) {
+        barIo?.disconnect();
+        barIo = new IntersectionObserver(([e]) => { const show = !e.isIntersecting && e.boundingClientRect.top > 0; bar.classList.toggle("is-on", show); document.body.classList.toggle("pdpbar-on", show); });
+        barIo.observe($(".pdp__buy", box));
+      }
       $("#pdpAsk").href = waLink(waFormat("Shop question", [["Product", `${p.title} (${p.id})`], ["Link", location.href.split("#")[0]], ["Question", ""]]));
       bind();
     }
@@ -305,6 +333,7 @@
     function refreshTotals() {
       $("#pdpUnit").textContent = inr(unit());
       $("#pdpTotal").textContent = inr(total());
+      if ($("#pdpBarTotal")) $("#pdpBarTotal").textContent = inr(total());
       $("#pdpQty").textContent = sel.qty;
     }
 

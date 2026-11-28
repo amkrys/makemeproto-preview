@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700;800;900&family=Red+Hat+Text:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500;600&family=Caveat:wght@500;700&family=Kalam:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261128c">
+  <link rel="stylesheet" href="css/style.css?v=20261128d">
   <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://lh3.googleusercontent.com">
 </head>
@@ -70,20 +70,24 @@
         <span class="doodle doodle--hide-m" style="left:95%;top:62%;--s:52px;--d:24;--rot:-6deg"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="8"/><path d="M32 10v6"/></svg></span>
       </div>
       <div class="wrap">
-        <div class="section__head shop__head">
-          <h2 data-en="Ready-made, &lt;span class=&quot;squiggle&quot;&gt;printed fresh&lt;/span&gt;.">Ready-made, <span class="squiggle">fresh print</span>.</h2>
-          <p class="section__sub">Designs we've printed and loved. Pick one, choose your colour, and order on WhatsApp. We print it fresh for you in <span data-city>Ahmedabad</span>.</p>
-          <p class="shop__note hand" aria-hidden="true" data-en="No cart, no fuss. Just WhatsApp us ✌️">Cart nahi, jhanjhat nahi. Bas WhatsApp karo ✌️</p>
+        <div class="shop__head">
+          <div class="shop__intro">
+            <p class="shop__eyebrow mono">The Proto Shop</p>
+            <h2 data-en="Ready-made, &lt;span class=&quot;squiggle&quot;&gt;printed fresh&lt;/span&gt;.">Ready-made, <span class="squiggle">fresh print</span>.</h2>
+            <p class="section__sub" data-en="Designs we've printed and loved. Pick one, choose a colour, and order on WhatsApp. We print it fresh for you.">Jo designs humne print kiye aur pasand aaye, sab yahan hain. Pasand karo, rang chuno, aur WhatsApp pe order karo. Hum aapke liye fresh print karte hain.</p>
+          </div>
+          <aside class="shop__sticky hand" aria-label="How it works" data-en="No cart, no fuss.&lt;br&gt;Just WhatsApp us ✌️&lt;small&gt;Printed fresh · ships in 3–5 days&lt;/small&gt;">Cart nahi, jhanjhat nahi.<br>Bas WhatsApp karo ✌️<small>Fresh print · 3–5 din mein ghar pe</small></aside>
         </div>
 
         <div class="shopbar">
           <label class="shopbar__search">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
             <span class="sr-only">Search products</span>
-            <input type="search" id="shopSearch" placeholder="Search lamps, keychains, planters…" autocomplete="off" enterkeyhint="search">
+            <input type="search" id="shopSearch" placeholder="Lamp, keychain, planter… kuch bhi dhoondo" autocomplete="off" enterkeyhint="search">
           </label>
           <label class="shopbar__sort">
-            <span class="mono">Sort</span>
+            <span class="sr-only">Sort</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></svg>
             <select id="shopSort">
               <option value="featured">Featured</option>
               <option value="popular">Most ordered</option>
@@ -92,40 +96,41 @@
               <option value="high">Price: high to low</option>
             </select>
           </label>
-          <button type="button" class="btn btn--ghost btn--sm shopbar__filters" id="shopFiltersBtn" aria-controls="shopFilters" aria-expanded="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg> Filters <b id="shopFilterCount" hidden></b>
+          <button type="button" class="shopbar__filters" id="shopFiltersBtn" aria-controls="shopFilters" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg> <span>Filters</span> <b id="shopFilterCount" hidden></b>
           </button>
         </div>
 
-        <div class="mfilter shop__cats" id="shopCats" role="group" aria-label="Category"></div>
+        <div class="shop__cats" id="shopCats" role="group" aria-label="Category"></div>
 
         <div class="shop__body">
           <aside class="sfilters" id="shopFilters" aria-label="Filters">
             <div class="sfilters__head">
               <p class="sfilters__title">Filters</p>
-              <button type="button" class="sfilters__clear" id="shopClear">Clear all</button>
+              <button type="button" class="sfilters__clear" id="shopClear" data-en="Clear all">Sab hatao</button>
               <button type="button" class="sfilters__x" id="shopFiltersClose" aria-label="Close filters">✕</button>
             </div>
             <fieldset class="sfilters__group" id="fMaterial"><legend class="mono">Material</legend><div class="sfilters__chips"></div></fieldset>
-            <fieldset class="sfilters__group"><legend class="mono">Price</legend>
+            <fieldset class="sfilters__group"><legend class="mono" data-en="Price">Daam</legend>
               <div class="sfilters__chips" id="fPricePresets"></div>
               <div class="sfilters__range">
                 <label><span class="sr-only">Minimum price</span><input type="number" id="fMin" inputmode="numeric" min="0" placeholder="₹ Min"></label>
-                <span aria-hidden="true">–</span>
+                <span aria-hidden="true">to</span>
                 <label><span class="sr-only">Maximum price</span><input type="number" id="fMax" inputmode="numeric" min="0" placeholder="₹ Max"></label>
               </div>
             </fieldset>
-            <fieldset class="sfilters__group" id="fColour"><legend class="mono">Colour</legend><div class="sfilters__swatches"></div></fieldset>
-            <fieldset class="sfilters__group"><legend class="mono">More</legend>
-              <label class="sfilters__check"><input type="checkbox" id="fCustom"> <span>✏️ Can be personalised</span></label>
-              <label class="sfilters__check"><input type="checkbox" id="fSale"> <span>🏷️ On sale</span></label>
+            <fieldset class="sfilters__group" id="fColour"><legend class="mono" data-en="Colour">Rang</legend><div class="sfilters__swatches"></div><p class="sfilters__picked" id="fColourPicked"></p></fieldset>
+            <fieldset class="sfilters__group"><legend class="mono" data-en="More">Aur</legend>
+              <label class="sfilters__check"><input type="checkbox" id="fCustom"> <span data-en="✏️ Can be personalised">✏️ Naam likhwa sakte ho</span></label>
+              <label class="sfilters__check"><input type="checkbox" id="fSale"> <span data-en="🏷️ On sale">🏷️ Sale pe hai</span></label>
             </fieldset>
-            <button type="button" class="btn btn--ink btn--block sfilters__done" id="shopFiltersDone">Show results</button>
+            <p class="sfilters__note hand" aria-hidden="true" data-en="Can't find it? We'll design it! →">Nahi mila? Hum design kar denge! →</p>
+            <button type="button" class="btn btn--ink btn--block sfilters__done" id="shopFiltersDone" data-en="Show results">Results dikhao</button>
           </aside>
 
           <div class="shop__main">
             <div class="shop__status">
-              <p class="shop__count mono" id="shopCount" aria-live="polite"></p>
+              <p class="shop__count" id="shopCount" aria-live="polite"></p>
               <div class="shop__active" id="shopActive"></div>
             </div>
             <div class="pgrid" id="shopGrid" aria-live="polite" aria-busy="true"></div>
@@ -139,16 +144,19 @@
       <div class="wrap">
         <div class="section__head">
           <h2 data-en="Ordering is &lt;span class=&quot;squiggle&quot;&gt;easy&lt;/span&gt;.">Order karna <span class="squiggle">easy</span> hai.</h2>
-          <p class="section__sub">No cart and no online payment. We confirm everything with you on WhatsApp first.</p>
+          <p class="section__sub" data-en="No cart and no online payment. We confirm everything with you on WhatsApp first.">Na cart, na online payment. Pehle WhatsApp pe sab confirm karte hain, phir print.</p>
         </div>
         <ol class="osteps">
-          <li class="osteps__step"><span class="osteps__n mono">01</span><h3>Pick a design</h3><p>Choose the size, material, colour and quantity. Add a name if it can be personalised.</p></li>
-          <li class="osteps__step"><span class="osteps__n mono">02</span><h3>Order on WhatsApp</h3><p>Tap <b>Order on WhatsApp</b>. Your order and its reference come to us in one message.</p></li>
-          <li class="osteps__step"><span class="osteps__n mono">03</span><h3>We print it fresh</h3><p>We confirm the price and delivery, you pay by UPI, and we print and ship it. Track it any time.</p></li>
+          <li class="osteps__step"><span class="osteps__n mono">01</span><span class="osteps__note hand" aria-hidden="true">2 min ⏱️</span>
+            <h3 data-en="Pick a design">Design chuno</h3><p data-en="Choose the size, material, colour and quantity. Add a name if it can be personalised.">Size, material, rang aur quantity chuno. Personalise ho sakta hai toh naam bhi likh do.</p></li>
+          <li class="osteps__step"><span class="osteps__n mono">02</span><span class="osteps__note hand" aria-hidden="true" data-en="one tap 👆">bas ek tap 👆</span>
+            <h3 data-en="Order on WhatsApp">WhatsApp pe order</h3><p data-en="Tap Order on WhatsApp. Your order and its reference reach us in one message.">&quot;WhatsApp pe order karo&quot; dabao. Order aur uska reference ek hi message mein humare paas.</p></li>
+          <li class="osteps__step"><span class="osteps__n mono">03</span><span class="osteps__note hand" aria-hidden="true" data-en="fresh off the printer 🖨️">printer se seedha 🖨️</span>
+            <h3 data-en="We print it fresh">Hum fresh print karte hain</h3><p data-en="We confirm the price and delivery, you pay by UPI, and we print and ship it. Track it any time.">Price aur delivery confirm, aap UPI se pay karo, hum print karke bhej dete hain. Kabhi bhi track karo.</p></li>
         </ol>
         <div class="shop__custom">
-          <p class="hand" data-en="Didn't find it? We'll make it for you!">Nahi mila? Hum bana denge!</p>
-          <a href="pricing.html#quote" class="btn btn--accent">⚡ Get a custom print price</a>
+          <p class="hand" data-en="Didn't find it? We'll make it for you!">Jo chahiye woh nahi mila? Hum bana denge!</p>
+          <a href="pricing.html#quote" class="btn btn--accent" data-en="⚡ Get a custom print price">⚡ Custom print ka price lo</a>
         </div>
       </div>
     </section>
@@ -256,8 +264,8 @@
   </a>
   <!-- @end -->
 
-  <script src="js/main.js?v=20261128c"></script>
-  <script src="js/shop.js?v=20261128s" defer></script>
-<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:9999;background:#141414;color:#fffdf8;font:600 12px/1.4 monospace;padding:5px 12px;border-radius:8px 8px 0 0;pointer-events:none">TEST SITE · feature/shop · c1f48ff · live site is makemeproto.com</div>
+  <script src="js/main.js?v=20261128d"></script>
+  <script src="js/shop.js?v=20261128d" defer></script>
+<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:9999;background:#141414;color:#fffdf8;font:600 12px/1.4 monospace;padding:5px 12px;border-radius:8px 8px 0 0;pointer-events:none">TEST SITE · feature/shop · 4aa3e29 · live site is makemeproto.com</div>
 </body>
 </html>
