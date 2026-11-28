@@ -2472,7 +2472,7 @@ body[data-page="product"] .price-float, body[data-page="shop"] .price-float { di
 @media (max-width: 640px) {
   .shop { --ctl: 44px; --pill: 36px; --card-r: 14px; }
   .shop__head { margin-bottom: 24px; }
-  .shop__sticky { font-size: 1.2rem; padding: 16px 16px 12px; }
+  .shop__sticky { width: fit-content; max-width: 86%; font-size: 1.15rem; padding: 14px 16px 10px; }
   .shopbar { gap: 8px; margin-bottom: 12px; }
   .shopbar__search { padding: 0 16px; }
   .shopbar__sort { padding: 0 14px; }
@@ -2490,8 +2490,9 @@ body[data-page="product"] .price-float, body[data-page="shop"] .price-float { di
   .pcard__price s { display: none; }
   .pcard__dots .cdot { width: 13px; height: 13px; }
   .pcard__meta { font-size: .72rem; margin-top: 6px; padding-top: 8px; }
-  .pcard__sticker { top: 8px; left: 8px; font-size: .9rem; padding: 4px 7px 5px; }
-  .pcard__top .pbadge--sale { top: 8px; right: 8px; height: 22px; font-size: .68rem; padding: 0 7px; }
+  .pcard__sticker { top: 8px; left: 8px; font-size: .85rem; padding: 4px 7px 5px; }
+  .pcard__top .pbadge--sale { top: auto; bottom: 8px; right: 8px; height: 22px; font-size: .68rem; padding: 0 7px; }
+  .pcard__sticker { max-width: calc(100% - 16px); white-space: nowrap; overflow: hidden; }
   .pcard__custom { left: 8px; bottom: 8px; height: 24px; font-size: .68rem; padding: 0 8px; }
   .pcard--custom .pcard__title { font-size: 1.3rem; }
   .pcard__customin { padding: 20px 12px; gap: 8px; }
