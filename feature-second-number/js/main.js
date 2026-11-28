@@ -9,7 +9,7 @@
 const CONFIG = {
   whatsapp: "918487072210",          // country code + number, digits only
   phoneText: "+91 84870 72210",      // how the number is shown on the page
-  phone2: "916376364161",            // second number for calls, shown only in the Contact section (WhatsApp always uses the number above)
+  phone2: "916376364161",            // second number, shown after the main one in the Contact section only (WhatsApp always uses the number above)
   phone2Text: "+91 63763 64161",
   email: "contact@makemeproto.com",
   city: "Ahmedabad",
@@ -192,7 +192,7 @@ function applyConfig() {
   $$("[data-city-full]").forEach((el) => (el.textContent = CONFIG.cityFull));
   $$("[data-phone-text]").forEach((el) => (el.textContent = CONFIG.phoneText));
   $$("[data-phone2]").forEach((el) => {
-    if (!/^\d{10,15}$/.test(CONFIG.phone2 || "")) { (el.closest("li") || el).remove(); return; }
+    if (!/^\d{10,15}$/.test(CONFIG.phone2 || "")) { (el.closest("[data-phone2-wrap]") || el).remove(); return; }
     el.textContent = CONFIG.phone2Text;
     el.href = "tel:+" + CONFIG.phone2;
   });
