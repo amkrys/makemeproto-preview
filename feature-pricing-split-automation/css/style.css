@@ -2191,3 +2191,16 @@ body.is-being-born .guide, body.is-being-born .wa-float, body.is-being-born .pri
   .tstep { grid-template-columns: 46px 1fr; justify-items: start; align-items: center; text-align: left; gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .tstep.is-now .tstep__dot { animation: none; } .trackres__card { transition: none; } }
+
+/* Live prices: shimmer until the latest prices arrive (first visit only), then a gentle fade if they change */
+html.price-loading :is([data-rate], [data-min-price], .mat__price, .ex__price) {
+  color: transparent !important; border-radius: 6px;
+  background: linear-gradient(90deg, var(--line) 0 40%, color-mix(in srgb, var(--line) 40%, white) 50%, var(--line) 60% 100%) 0 0 / 300% 100%;
+  animation: priceShimmer 1.2s linear infinite;
+}
+html.price-loading #materials .mat__swatch { opacity: .35; }
+@keyframes priceShimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+:is([data-rate], [data-min-price], .mat__price, .ex__price, .mat__swatch, #materials .mat) { transition: opacity .35s ease, color .35s ease; }
+html.price-updated :is([data-rate], [data-min-price], .mat__price, .ex__price, #materials .mat) { animation: priceFade .6s ease; }
+@keyframes priceFade { from { opacity: .25; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { html.price-loading :is([data-rate], [data-min-price], .mat__price, .ex__price) { animation: none; } }

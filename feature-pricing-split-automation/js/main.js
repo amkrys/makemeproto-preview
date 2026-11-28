@@ -72,21 +72,37 @@ function quotePrice(name, grams, qty) {
 const priceText = (r) => r.min ? inr(CONFIG.pricing.minPrice) : `${inr(Math.max(CONFIG.pricing.minPrice, r.total * 0.9))} – ${inr(r.total * 1.15)}`;
 
 // Loads the live price list (materials, rates, waste, minimum) that the app manages.
+// Starts as soon as this file runs. Visitors who have been here before see their last prices at once;
+// first-time visitors see a soft shimmer on prices (html.price-loading) until the live list arrives, never old numbers.
+const PRICING_KEY = "mmp-pricing";
+let pricingReady = false;
+const pricingRequest = (CONFIG.forms.endpoint && typeof fetch === "function")
+  ? fetch(CONFIG.forms.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ form: "pricing" }) })
+    .then((r) => r.json()).catch(() => null)
+  : Promise.resolve(null);
 function loadPricing() {
-  const KEY = "mmp-pricing";
-  const apply = (d) => {
-    if (!d || !Array.isArray(d.materials) || !d.materials.length) return;
+  const root = document.documentElement;
+  const apply = (d, fresh) => {
+    if (!d || !Array.isArray(d.materials) || !d.materials.length) return false;
+    const before = JSON.stringify(CONFIG.pricing);
     Object.assign(CONFIG.pricing, d);
+    if (JSON.stringify(CONFIG.pricing) === before) return true;
+    if (fresh && pricingReady) root.classList.add("price-updated");   // prices changed while on the page: fade, don't jump
     document.dispatchEvent(new CustomEvent("mmp:pricing"));
+    if (fresh && pricingReady) setTimeout(() => root.classList.remove("price-updated"), 700);
+    return true;
   };
-  try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c) apply(c.d); } catch (e) { /* no storage */ }   // last known prices first, then the latest
-  if (!CONFIG.forms.endpoint) return;
-  fetch(CONFIG.forms.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ form: "pricing" }) })
-    .then((r) => r.json()).then((d) => {
-      if (!d || !d.ok) return;
-      apply(d);
-      try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), d: d })); } catch (e) { /* no storage */ }
-    }).catch(() => {});
+  const done = () => { pricingReady = true; root.classList.remove("price-loading"); };
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(PRICING_KEY) || "null"); } catch (e) { /* no storage */ }
+  if (cached && apply(cached.d, false)) done();
+  setTimeout(done, 4000);   // slow network: show the built-in prices rather than shimmer forever
+  pricingRequest.then((d) => {
+    if (!d || !d.ok) return done();
+    apply(d, true);
+    done();
+    try { localStorage.setItem(PRICING_KEY, JSON.stringify({ t: Date.now(), d: d })); } catch (e) { /* no storage */ }
+  });
 }
 
 // Fills every price-dependent bit of the page: material dropdown, material cards, "₹5 / g" labels
@@ -2410,8 +2426,8 @@ function initReveal() {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyConfig();
+  loadPricing();     // last known prices first (if any), so the first paint is already right
   renderPricing();
-  loadPricing();
   initAnalytics();
   initLang();
   initBirth();
