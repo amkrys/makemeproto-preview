@@ -66,7 +66,7 @@
         <span class="pcard__cat mono">${esc(p.category)}</span>
         <span class="pcard__title">${esc(p.title)}</span>
         <span class="pcard__row">
-          <span class="pcard__price">${from ? `<small>${T("se shuru", "from")}</small>` : ""}${inr(p.price)}${p.was > p.price ? `<s>${inr(p.was)}</s>` : ""}</span>
+          <span class="pcard__price">${from && LANG === "en" ? `<small>from</small>` : ""}${inr(p.price)}${from && LANG !== "en" ? `<small>se shuru</small>` : ""}${p.was > p.price ? `<s>${inr(p.was)}</s>` : ""}</span>
           <span class="pcard__dots">${cols.slice(0, 3).map(dot).join("")}${cols.length > 3 ? `<b>+${cols.length - 3}</b>` : ""}</span>
         </span>
         <span class="pcard__meta">${meta}</span>
