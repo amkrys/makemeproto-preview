@@ -9,6 +9,8 @@
 const CONFIG = {
   whatsapp: "918487072210",          // country code + number, digits only
   phoneText: "+91 84870 72210",      // how the number is shown on the page
+  phone2: "916376364161",            // second number, shown after the main one in the Contact section only (WhatsApp always uses the number above)
+  phone2Text: "+91 63763 64161",
   email: "contact@makemeproto.com",
   city: "Ahmedabad",
   cityFull: "Ahmedabad, Gujarat",
@@ -35,15 +37,23 @@ const CONFIG = {
   theme: "filament",
   showThemeSwitcher: false,          // true shows the 🎨 colour button
 
-  // Prices in ₹ per gram, and material density in g/cm³
-  materials: {
-    PLA:  { rate: 5, density: 1.24 },
-    PETG: { rate: 6, density: 1.27 },
-    ABS:  { rate: 6, density: 1.04 },
-    TPU:  { rate: 8, density: 1.21 },
+  // Prices are managed from the MakeMeProto Ops app and loaded live (see loadPricing).
+  // These are only the fallback if that can't be reached: ₹ per gram, density in g/cm³.
+  pricing: {
+    materials: [
+      { name: "PLA", rate: 5, density: 1.24 },
+      { name: "PETG", rate: 6, density: 1.27 },
+      { name: "ABS", rate: 6, density: 1.04 },
+      { name: "TPU", rate: 8, density: 1.21 },
+    ],
+    wasteSmallPct: 30,     // filament used by supports, purge and brim on small items
+    wasteLargePct: 25,
+    smallUpToG: 100,
+    minPrice: 300,         // ₹ minimum per order
+    gramsPerHour: 15,      // rough printer speed, used for the time estimate
+    designPerHour: 300,
+    roundTo: 10,
   },
-  minOrder: 300,           // ₹ minimum per order
-  gramsPerHour: 15,        // rough printer speed, used for the time estimate
   maxSizeMm: 250,          // biggest single print (warns if the model is larger)
 };
 
@@ -51,6 +61,84 @@ const CONFIG = {
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const inr = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+
+/* ---------- Prices: one formula, shared with the MakeMeProto Ops app (backend quotePrice) ---------- */
+const mat = (name) => CONFIG.pricing.materials.find((m) => m.name === name) || CONFIG.pricing.materials[0];
+// grams = actual filament for one piece. We charge for the filament wasted while printing too.
+function quotePrice(name, grams, qty) {
+  const p = CONFIG.pricing, m = mat(name), g = Math.max(0, +grams || 0), q = Math.max(1, Math.round(+qty || 1));
+  const wastePct = g <= p.smallUpToG ? p.wasteSmallPct : p.wasteLargePct;
+  const billed = g * (1 + wastePct / 100), print = billed * m.rate * q;
+  return { billed, print, min: print > 0 && print < p.minPrice, total: Math.max(p.minPrice, print), hours: billed * q / Math.max(1, p.gramsPerHour) };
+}
+const priceText = (r) => r.min ? inr(CONFIG.pricing.minPrice) : `${inr(Math.max(CONFIG.pricing.minPrice, r.total * 0.9))} – ${inr(r.total * 1.15)}`;
+
+// Loads the live price list (materials, rates, waste, minimum) that the app manages.
+// Starts as soon as this file runs. Visitors who have been here before see their last prices at once;
+// first-time visitors see a soft shimmer on prices (html.price-loading) until the live list arrives, never old numbers.
+const PRICING_KEY = "mmp-pricing";
+let pricingReady = false;
+const pricingRequest = (CONFIG.forms.endpoint && typeof fetch === "function")
+  ? fetch(CONFIG.forms.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ form: "pricing" }) })
+    .then((r) => r.json()).catch(() => null)
+  : Promise.resolve(null);
+function loadPricing() {
+  const root = document.documentElement;
+  const apply = (d, fresh) => {
+    if (!d || !Array.isArray(d.materials) || !d.materials.length) return false;
+    const before = JSON.stringify(CONFIG.pricing);
+    Object.assign(CONFIG.pricing, d);
+    if (JSON.stringify(CONFIG.pricing) === before) return true;
+    if (fresh && pricingReady) root.classList.add("price-updated");   // prices changed while on the page: fade, don't jump
+    document.dispatchEvent(new CustomEvent("mmp:pricing"));
+    if (fresh && pricingReady) setTimeout(() => root.classList.remove("price-updated"), 700);
+    return true;
+  };
+  const done = () => { pricingReady = true; root.classList.remove("price-loading"); };
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(PRICING_KEY) || "null"); } catch (e) { /* no storage */ }
+  if (cached && apply(cached.d, false)) done();
+  setTimeout(done, 4000);   // slow network: show the built-in prices rather than shimmer forever
+  pricingRequest.then((d) => {
+    if (!d || !d.ok) return done();
+    apply(d, true);
+    done();
+    try { localStorage.setItem(PRICING_KEY, JSON.stringify({ t: Date.now(), d: d })); } catch (e) { /* no storage */ }
+  });
+}
+
+// Fills every price-dependent bit of the page: material dropdown, material cards, "₹5 / g" labels
+function renderPricing() {
+  const P = CONFIG.pricing, esc = (t) => String(t || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const sel = $("#material");
+  if (sel) {
+    const keep = sel.value, labels = {};
+    [...sel.options].forEach((o) => { labels[o.value] = o.textContent; });
+    sel.innerHTML = P.materials.map((m) => `<option value="${esc(m.name)}">${esc(labels[m.name] || (m.about ? `${m.name}: ${m.about.split(".")[0].toLowerCase()}` : m.name))}</option>`).join("");
+    sel.value = P.materials.some((m) => m.name === keep) ? keep : P.materials[0].name;
+  }
+  const grid = $("#materials .mats");
+  if (grid && P.materials.some((m) => m.about)) {
+    const annot = grid.querySelector(".annot--mat"), aside = grid.querySelector(".mat__aside");
+    grid.innerHTML = P.materials.map((m) => `<article class="mat">
+        <div class="mat__swatch" style="--c:${esc(m.hex || "#8E8E8E")}"></div>
+        <h3>${esc(m.name)}</h3>
+        <p>${esc(m.about)}</p>
+        <ul class="mono">
+          <li><span>Strength</span><i style="--v:${+m.strength || 3}"></i></li>
+          <li><span>Heat</span><i style="--v:${+m.heat || 1}"></i></li>
+          <li><span>Flexibility</span><i style="--v:${+m.flex || 1}"></i></li>
+        </ul>
+        <p class="mat__price mono">₹${m.rate} / g</p>
+      </article>`).join("");
+    const cards = grid.querySelectorAll(".mat");
+    if (annot && cards[0]) cards[0].prepend(annot);
+    const bendy = P.materials.findIndex((m) => (+m.flex || 0) >= 5);
+    if (aside && bendy >= 0) cards[bendy].querySelector("p").after(aside);
+  }
+  $$("[data-rate]").forEach((el) => { const m = P.materials.find((x) => x.name === el.dataset.rate); if (m) el.textContent = `₹${m.rate}`; });
+  $$("[data-min-price]").forEach((el) => { el.textContent = inr(P.minPrice); });
+}
 /* Every WhatsApp message is laid out the same way, so they're easy to read and sort:
      *📌 MakeMeProto · Topic*
      ━━━━━━━━━━━━
@@ -103,6 +191,11 @@ function applyConfig() {
   $$("[data-city]").forEach((el) => (el.textContent = CONFIG.city));
   $$("[data-city-full]").forEach((el) => (el.textContent = CONFIG.cityFull));
   $$("[data-phone-text]").forEach((el) => (el.textContent = CONFIG.phoneText));
+  $$("[data-phone2]").forEach((el) => {
+    if (!/^\d{10,15}$/.test(CONFIG.phone2 || "")) { (el.closest("[data-phone2-wrap]") || el).remove(); return; }
+    el.textContent = CONFIG.phone2Text;
+    el.href = "tel:+" + CONFIG.phone2;
+  });
   $$("[data-email]").forEach((el) => {
     el.textContent = CONFIG.email;
     el.href = "mailto:" + CONFIG.email;
@@ -863,14 +956,14 @@ function initQuote() {
   function calc() {
     infillVal.textContent = infill.value + "%";
     $("#colorVal").textContent = color();
-    const mat = CONFIG.materials[material.value];
+    const m = mat(material.value);
     const q = Math.max(1, parseInt(qty.value, 10) || 1);
     let weight = 0;
 
     if (model) {
       // Walls and top/bottom are solid; the inside follows infill %.
       const fill = 0.25 + 0.75 * (infill.value / 100);
-      weight = model.volumeCm3 * mat.density * fill;
+      weight = model.volumeCm3 * (m.density || 1.24) * fill;
       out.size.textContent = model.size.map((d) => d.toFixed(0)).join(" × ") + " mm";
       out.vol.textContent = model.volumeCm3.toFixed(1) + " cm³";
     } else {
@@ -890,14 +983,14 @@ function initQuote() {
       return;
     }
 
-    const each = weight * mat.rate;
-    const total = Math.max(CONFIG.minOrder, each * q);
-    const low = Math.max(CONFIG.minOrder, total * 0.9), high = Math.max(CONFIG.minOrder, total * 1.15);
-    const hours = (weight * q) / CONFIG.gramsPerHour;
+    const r = quotePrice(material.value, weight, q);
+    const actual = weight;   // what the model itself needs: saved with the order, so the app can plan the print
+    weight = r.billed;       // what we show and charge for: includes filament used by supports, purge and brim
+    const hours = r.hours;
 
-    out.price.textContent = each * q <= CONFIG.minOrder ? inr(CONFIG.minOrder) : `${inr(low)} – ${inr(high)}`;
-    let note = `${q} × ${material.value}, ${infill.value}% infill`;
-    if (each * q < CONFIG.minOrder) note += ` · minimum order ${inr(CONFIG.minOrder)}`;
+    out.price.textContent = priceText(r);
+    let note = `${q} × ${material.value}, ${infill.value}% infill · incl. supports`;
+    if (r.min) note += ` · minimum order ${inr(CONFIG.pricing.minPrice)}`;
     if (model && Math.max(...model.size) > CONFIG.maxSizeMm)
       note += " · larger than our print area, we'll print it in parts";
     out.note.textContent = note;
@@ -906,7 +999,7 @@ function initQuote() {
 
     const msg = waFormat("Quote request 🧾", [
       ["File", fileName || null],
-      ["Approx weight", fileName ? null : `${weight.toFixed(0)} g`],
+      ["Approx weight", fileName ? null : `${actual.toFixed(0)} g`],
       ["Size", model ? out.size.textContent : null],
       ["Material", material.value],
       ["Infill", `${infill.value}%`],
@@ -915,7 +1008,7 @@ function initQuote() {
       ["Website estimate", out.price.textContent],
     ], fileName ? "📎 I'll attach the STL file in this chat." : null);
     quoteMsg = msg;
-    quoteFields = { material: material.value, infill: infill.value + "%", colour: color(), quantity: q, weight: `${weight.toFixed(0)} g${q > 1 ? " each" : ""}`,
+    quoteFields = { material: material.value, infill: infill.value + "%", colour: color(), quantity: q, weight: `${actual.toFixed(0)} g${q > 1 ? " each" : ""}`,
       size: model ? out.size.textContent : "", estimate: out.price.textContent, file: fileName };
     out.wa.href = waLink(msg);
     out.wa.target = "_blank";
@@ -994,6 +1087,7 @@ function initQuote() {
     calc();
   });
   [material, qty, infill].forEach((el) => el.addEventListener("input", calc));
+  document.addEventListener("mmp:pricing", () => { renderPricing(); calc(); });
   $$('input[name="color"]').forEach((el) => el.addEventListener("change", calc));
   $("#quoteForm").addEventListener("submit", (e) => e.preventDefault());
   calc();
@@ -1137,7 +1231,7 @@ const mediaSlug = (m) => (m.titleEn || m.title).toLowerCase().replace(/[^a-z0-9]
 const mediaTitle = (m) => (LANG === "en" ? m.titleEn || m.title : m.title);
 const mediaCaption = (m) => (LANG === "en" ? m.captionEn || m.caption : m.caption) || "";
 const mediaDate = (m) => { try { return new Date(m.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return m.date; } };
-const playable = (m) => !m.soon && (m.instagram || m.youtube || m.video || m.image);
+const playable = (m) => !m.soon && (m.instagram || m.youtube || m.video || m.image || m.drive);
 const escHtml = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 function mediaThumb(m, cls = "mcard__media") {
@@ -1152,7 +1246,8 @@ function mediaThumb(m, cls = "mcard__media") {
 function initGallery() {
   const grid = $("#mediaGrid");
   const vlogList = $("#vlogList");
-  const list = (window.MEDIA || []).slice().sort((a, b) => (a.soon === b.soon ? String(b.date).localeCompare(String(a.date)) : a.soon ? 1 : -1));
+  const sortMedia = (arr) => arr.slice().sort((a, b) => (a.soon === b.soon ? String(b.date).localeCompare(String(a.date)) : a.soon ? 1 : -1));
+  let list = sortMedia(window.MEDIA || []);
   if (!grid && !vlogList) return;
   let filter = "all", shown = [];
   const box = $("#mediaBox"), stage = $("#mboxStage");
@@ -1220,6 +1315,8 @@ function initGallery() {
       html = `<iframe class="mbox__frame mbox__frame--ig" src="${escHtml(url)}embed/" title="${escHtml(mediaTitle(m))}" loading="lazy" allowfullscreen></iframe>`;
     } else if (m.youtube) {
       html = `<iframe class="mbox__frame mbox__frame--yt" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(m.youtube)}?autoplay=1&rel=0" title="${escHtml(mediaTitle(m))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    } else if (m.drive) {
+      html = `<iframe class="mbox__frame mbox__frame--drive" src="https://drive.google.com/file/d/${encodeURIComponent(m.drive)}/preview" title="${escHtml(mediaTitle(m))}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
     } else if (m.video) {
       html = `<video class="mbox__video" src="${escHtml(m.video)}" ${m.poster ? `poster="${escHtml(m.poster)}"` : ""} controls autoplay playsinline loop></video>`;
     } else if (m.image) {
@@ -1270,8 +1367,28 @@ function initGallery() {
   render();
   addEventListener("mmp:lang", render);
   // a shared link like media.html#m-our-logo-comes-to-life opens that item
-  const hit = location.hash.startsWith("#m-") ? list.findIndex((m) => "#m-" + mediaSlug(m) === location.hash) : -1;
-  if (hit > -1) setTimeout(() => open(hit, list), 300);
+  const openFromHash = () => {
+    const hit = location.hash.startsWith("#m-") ? list.findIndex((m) => "#m-" + mediaSlug(m) === location.hash) : -1;
+    if (hit > -1 && !box?.open) setTimeout(() => open(hit, list), 300);
+    return hit > -1;
+  };
+  const opened = openFromHash();
+
+  // posts published from the MakeMeProto Ops app (photos and videos kept in Google Drive)
+  if (CONFIG.forms?.endpoint) {
+    fetch(CONFIG.forms.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ form: "gallery" }) })
+      .then((r) => r.json())
+      .then((res) => {
+        const items = (res && res.ok && Array.isArray(res.items) ? res.items : []).filter((m) => m && m.title && MEDIA_TYPES[m.type]);
+        if (!items.length) return;
+        const ids = new Set(items.map((m) => m.id));
+        // once real posts exist, the placeholder samples step aside
+        list = sortMedia(items.concat((window.MEDIA || []).filter((m) => !m.sample && !ids.has(m.id))));
+        render();
+        if (!opened) openFromHash();
+      })
+      .catch(() => { /* offline or blocked: the built-in list still shows */ });
+  }
 }
 
 /* =========================================================
@@ -1393,6 +1510,7 @@ function initTrack() {
       ${stopped ? `<p class="trackres__banner">${r.state === "hold" ? "⏸️" : "✖️"} ${escHtml(r.status)}</p>`
         : `<div class="tsteps-bar" style="--frac:${(pct / 100).toFixed(2)}"><ol class="tstepper" aria-label="${T("Order ki progress", "Order progress")}">${steps}</ol></div>`}
       ${r.update ? `<div class="trackres__update"><span aria-hidden="true">💬</span><div><b>${T("Humari taraf se update", "Update from us")}</b><p>${escHtml(r.update)}</p></div></div>` : ""}
+      ${(r.photos || []).length ? `<div class="trackres__photos"><b>${T("Aapke print ki photos", "Photos of your print")}</b><div>${r.photos.map((ph) => `<a href="${escHtml(ph.full)}" target="_blank" rel="noopener"><img src="${escHtml(ph.thumb)}" alt="${T("Order ki photo", "Order photo")}" loading="lazy"></a>`).join("")}</div></div>` : ""}
       ${rows.length ? `<dl class="trackres__info">${rows.map(([k, v]) => `<div><dt class="mono">${escHtml(k)}</dt><dd>${escHtml(v)}</dd></div>`).join("")}</dl>` : ""}
       <div class="trackres__actions">
         <a class="btn btn--ink" href="${waLink(waFormat("Order status 🔍", [["Reference", r.ref], ["Status shown", r.status]], "Hi! I have a question about my order."))}" target="_blank" rel="noopener">💬 ${T("Is order ke baare mein WhatsApp karo", "Ask about this order on WhatsApp")}</a>
@@ -1549,12 +1667,11 @@ function initUses() {
 
 /* ---------- "Kitne ka padega?" examples: same formula as the calculator ---------- */
 function initExamples() {
-  $$(".ex__price").forEach((el) => {
-    const g = +el.dataset.grams, mat = CONFIG.materials[el.dataset.mat], q = +el.dataset.qty || 1;
-    const total = g * mat.rate * q;
-    el.textContent = total <= CONFIG.minOrder ? inr(CONFIG.minOrder)
-      : `${inr(Math.max(CONFIG.minOrder, total * 0.9))}–${inr(total * 1.15)}`;
+  const paint = () => $$(".ex__price").forEach((el) => {
+    el.textContent = priceText(quotePrice(el.dataset.mat, +el.dataset.grams, +el.dataset.qty || 1)).replace(" – ", "–");
   });
+  paint();
+  document.addEventListener("mmp:pricing", paint);
   $$(".ex__try").forEach((b) => b.addEventListener("click", () => {
     const grams = $("#manualGrams"), material = $("#material");
     material.value = b.dataset.mat;
@@ -2316,6 +2433,8 @@ function initReveal() {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyConfig();
+  loadPricing();     // last known prices first (if any), so the first paint is already right
+  renderPricing();
   initAnalytics();
   initLang();
   initBirth();
