@@ -2216,7 +2216,13 @@ html.price-updated :is([data-rate], [data-min-price], .mat__price, .ex__price, #
 .shop__head { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: end; margin-bottom: 32px; }
 .shop__intro { max-width: 640px; }
 .shop__eyebrow { font-size: .75rem; text-transform: uppercase; letter-spacing: .14em; color: var(--accent-ink); margin: 0 0 12px; }
+.shop__intro.section__head { margin-bottom: 0; }
 .shop__intro h2 { margin-bottom: 12px; }
+.shop__title { position: relative; display: inline-block; padding-right: 8px; }
+.shop__title .squiggle { color: var(--accent-ink); }
+.shop__annot { position: absolute; left: 100%; top: -22px; display: flex; align-items: flex-start; gap: 2px; white-space: nowrap; pointer-events: none;
+  font-size: 1.35rem; font-weight: 700; letter-spacing: 0; line-height: 1; color: var(--accent-ink); transform: rotate(-4deg); }
+.shop__annot svg { width: 44px; height: 40px; margin-top: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; order: -1; }
 .shop__intro .section__sub { margin: 0; }
 .shop__sticky { position: relative; width: 250px; margin: 0 8px 8px 0; padding: 20px 20px 16px; background: #fff1a8; color: var(--ink); font-size: 1.45rem; line-height: 1.12;
   transform: rotate(2.5deg); border-radius: 3px; box-shadow: 0 10px 22px -12px rgba(0,0,0,.45); }
@@ -2441,6 +2447,9 @@ body[data-page="product"] .price-float, body[data-page="shop"] .price-float { di
 }
 @media (max-width: 980px) {
   .shop__head { grid-template-columns: 1fr; gap: 24px; }
+  .shop__annot { position: static; display: inline-flex; margin: 6px 0 0 4px; font-size: 1.2rem; transform: rotate(-3deg); }
+  .shop__annot svg { display: none; }
+  .shop__title { display: block; }
   .shop__sticky { width: auto; max-width: 340px; transform: rotate(-1.5deg); margin: 0 0 4px 4px; font-size: 1.3rem; }
   .shopbar { grid-template-columns: 1fr 1fr; }
   .shopbar__search { grid-column: 1 / -1; }
