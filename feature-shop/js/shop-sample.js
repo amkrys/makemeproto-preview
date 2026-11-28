@@ -2,7 +2,7 @@
    Lets us see the Shop design before real products are added in the app. Never used on makemeproto.com. */
 window.MMP_SHOP_SAMPLE = (() => {
   const img = (f) => "assets/shop-sample/" + f;
-  const P = (o) => Object.assign({ was: 0, materials: ["PLA"], colours: [], options: [], images: [], featured: false, size: "", grams: 0, hours: 0, ships: "Ships in 3–5 days", personalise: "", tags: [], orders: 0, added: "2026-11-20", description: "" }, o, { thumbs: o.images || [] });
+  const P = (o) => Object.assign({ was: 0, materials: ["PLA"], colours: [], options: [], images: [], featured: false, size: "", grams: 0, hours: 0, ships: "About 10 days", personalise: "", tags: [], orders: 0, added: "2026-11-20", description: "" }, o, { thumbs: o.images || [] });
   return {
     ok: true,
     categories: ["Home decor", "Lamps", "Gifts", "Desk & office", "Keychains", "Planters", "Toys & games", "Tools & parts"],
@@ -25,7 +25,7 @@ window.MMP_SHOP_SAMPLE = (() => {
         colours: [{ name: "Blue", hex: "#3B6CFF" }, { name: "White", hex: "#F4F1EA" }, { name: "Matte black", hex: "#141414" }],
         description: "Four tubes for pens, brushes and tools. Felt pads underneath.", tags: ["office", "study table"] }),
       P({ id: "P-SAMPLE05", slug: "phone-stand", title: "Foldable phone stand", category: "Desk & office", price: 249, orders: 9, added: "2026-11-10",
-        materials: ["PETG"], colours: [{ name: "Matte black", hex: "#141414" }, { name: "Grey", hex: "#8E8E8E" }], ships: "Ships in 2 days", description: "Three angles, folds flat into your bag." }),
+        materials: ["PETG"], colours: [{ name: "Matte black", hex: "#141414" }, { name: "Grey", hex: "#8E8E8E" }], description: "Three angles, folds flat into your bag." }),
       P({ id: "P-SAMPLE06", slug: "dino-fidget", title: "Articulated dino", category: "Toys & games", price: 349, was: 399, orders: 17, added: "2026-11-15",
         materials: ["PLA"], colours: [{ name: "Silk gold", hex: "#C9A227" }, { name: "Green", hex: "#2E8B57" }, { name: "Rainbow silk", hex: "#E5336B" }], size: "18 cm long", description: "Printed in one piece, every joint moves. Kids love it." }),
       P({ id: "P-SAMPLE07", slug: "bottle-opener", title: "Wall bottle opener", category: "Tools & parts", price: 299, materials: ["PETG"], added: "2026-11-12", description: "Strong PETG with a steel insert." }),

@@ -17,6 +17,12 @@
   const off = (p) => (p.was > p.price ? Math.round((1 - p.price / p.was) * 100) : 0);
   const productUrl = (p) => `product.html?id=${encodeURIComponent(p.id)}&n=${encodeURIComponent(p.slug || "")}${/[?&]sample=1\b/.test(location.search) ? "&sample=1" : ""}`;
   const colourKey = (c) => String(c.name || "").trim().toLowerCase();
+  // delivery always says about 10 days: a product note promising less is not shown
+  const DELIVERY_DAYS = 10;
+  const ships = (p) => {
+    const n = String(p.ships || "").match(/\d+/g);
+    return n && n.every((x) => +x >= DELIVERY_DAYS) ? esc(p.ships) : T(`~${DELIVERY_DAYS} din mein delivery`, `Delivered in about ${DELIVERY_DAYS} days`);
+  };
 
   /* ---------- data: last known list at once, then the latest ---------- */
   let products = null, categories = [];
@@ -54,7 +60,7 @@
   }
   function card(p) {
     const pct = off(p), cols = p.colours || [], from = (p.options || []).some((o) => o.add > 0);
-    const meta = p.orders > 0 ? `🔥 ${p.orders} ${T("logon ne liya", p.orders === 1 ? "order" : "orders")}` : p.ships ? `🚚 ${esc(p.ships)}` : `🖨️ ${T("Fresh print", "Printed fresh")}`;
+    const meta = p.orders > 0 ? `🔥 ${p.orders} ${T("logon ne liya", p.orders === 1 ? "order" : "orders")}` : `🚚 ${ships(p)}`;
     return `<a class="pcard" href="${productUrl(p)}" data-id="${esc(p.id)}">
       <span class="pcard__top">
         ${media(p, "pcard__media pmedia")}
@@ -262,7 +268,7 @@
           <h1 class="pdp__title">${esc(p.title)}</h1>
           <p class="pdp__price"><span id="pdpUnit">${inr(unit())}</span>${p.was > p.price ? `<s>${inr(p.was + (sel.option ? sel.option.add || 0 : 0))}</s><span class="pbadge pbadge--sale">−${pct}%</span>` : ""}</p>
           ${pct ? `<p class="pdp__deal hand">${T("Abhi sasta hai! 🎉", "On sale right now! 🎉")}</p>` : ""}
-          <ul class="pdp__facts">${[p.orders > 0 ? `<li>🔥 ${p.orders} ${T("logon ne liya", p.orders === 1 ? "order so far" : "orders so far")}</li>` : "", p.ships ? `<li>🚚 ${esc(p.ships)}</li>` : "", `<li>📍 ${T("Fresh print", "Printed fresh in")} ${esc(CONFIG.city)}</li>`].join("")}</ul>
+          <ul class="pdp__facts">${[p.orders > 0 ? `<li>🔥 ${p.orders} ${T("logon ne liya", p.orders === 1 ? "order so far" : "orders so far")}</li>` : "", `<li>🚚 ${ships(p)}</li>`, `<li>📍 ${T("Fresh print", "Printed fresh in")} ${esc(CONFIG.city)}</li>`].join("")}</ul>
 
           <form class="pdp__form" id="pdpForm" novalidate>
             <div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
@@ -289,7 +295,7 @@
               <ul class="pdp__trust">
                 <li><b>💬</b>${T("Abhi koi payment nahi", "No payment now")}</li>
                 <li><b>🖨️</b>${T("Order pe fresh print", "Printed to order")}</li>
-                <li><b>📦</b>${T("Ghar tak delivery", "Delivered to you")}</li>
+                <li><b>📦</b>${T("~10 din mein ghar pe", "At your door in ~10 days")}</li>
               </ul>
             </div>
           </form>
